@@ -25,6 +25,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
           
+      - name: 🔍 Vérification des PDFs corrompus
+        working-directory: ./scraping_lois/
+        run: python verif_pdfs_db.py
+        env:
+          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+
       - name: ⚙️ Exécution du pipeline principal
         working-directory: ./scraping_lois/ 
         run: python main_pipeline_scraping.py
