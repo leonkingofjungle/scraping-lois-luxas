@@ -80,6 +80,17 @@ log("\n" + "="*25 + " ÉTAPE 2/3: COMPARAISON " + "="*25)
 # Sécurités colonnes
 if "downloaded" not in old_df.columns: old_df = old_df.with_columns(pl.lit(False).alias("downloaded"))
 if "is_404" not in old_df.columns: old_df = old_df.with_columns(pl.lit(False).alias("is_404"))
+if "is_corrupted" not in old_df.columns: old_df = old_df.with_columns(pl.lit(False).alias("is_corrupted"))
+
+corrupted_urls = set(
+    old_df.filter(
+        (pl.col("is_corrupted") == True) & 
+        (pl.col("is_404") == False)
+    )
+    .get_column("url")
+    .to_list()
+)
+log(f"PDFs corrompus : {len(corrupted_urls)}")
 
 new_urls = set(new_df["url"].to_list())
 added_urls = new_urls - old_urls
@@ -97,9 +108,11 @@ if not urls_to_process:
 
     exit(0)
 
+rows_corrupted = old_df.filter(pl.col("url").is_in(corrupted_urls)).select(["url", "provenance"])
 rows_from_new = new_df.filter(pl.col("url").is_in(added_urls)).select(["url", "provenance"])
 rows_from_old = old_df.filter(pl.col("url").is_in(retry_urls)).select(["url", "provenance"])
-rows_to_download = pl.concat([rows_from_new, rows_from_old]).to_dicts()
+
+rows_to_download = pl.concat([rows_corrupted, rows_from_new, rows_from_old]).to_dicts()
 
 # ===============================================
 #  ÉTAPE 4: TÉLÉCHARGEMENT & UPLOAD CLOUD
@@ -152,12 +165,16 @@ final_df = final_df.join(df_success_map, on="url", how="left")
 
 final_df = final_df.with_columns(
     pl.when(pl.col("url").is_in(success_urls)).then(True).otherwise(pl.col("downloaded")).alias("downloaded"),
-    pl.when(pl.col("url").is_in(failed_404_urls)).then(True).otherwise(pl.col("is_404")).alias("is_404"),
+    pl.when(pl.col("url").is_in(failed_404_urls)).then(True).otherwise(pl.col("is_404")).alias("is_404"),    
+    pl.when(pl.col("url").is_in(success_urls) & (pl.col("is_corrupted") == True))
+      .then(False)
+      .otherwise(pl.col("is_corrupted"))
+      .alias("is_corrupted"),
     pl.when(pl.col("pdf_name_new").is_not_null())
       .then(pl.col("pdf_name_new"))
       .otherwise(pl.col("pdf_name"))
       .alias("pdf_name")
-).drop("pdf_name_new") 
+).drop("pdf_name_new")
 
 final_df.write_parquet(local_db_path)
 
