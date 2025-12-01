@@ -14,8 +14,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_DIR = os.path.join(BASE_DIR, "db")
 PDF_DIR = os.path.join(DB_DIR, "pdf")
 LOG_DIR = os.path.join(DB_DIR, "logs")
+LOG_PIPELINE_DIR = os.path.join(LOG_DIR, "pipeline_scraping_pdf_main")
 
-os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(LOG_PIPELINE_DIR, exist_ok=True)
 os.makedirs(PDF_DIR, exist_ok=True)
 
 BUCKET_NAME = os.getenv("BUCKET_NAME")
@@ -26,7 +27,7 @@ s3 = boto3.client(
     aws_secret_access_key=os.getenv("R2_SECRET_ACCESS_KEY")
 )
 
-logfile = os.path.join(LOG_DIR, f"pipeline_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.log")
+logfile = os.path.join(LOG_PIPELINE_DIR, f"pipeline_{datetime.now().strftime('%Y-%m-%d_%H-%M')}.log")
 
 def log(message: str):
     timestamp = datetime.now().isoformat()
@@ -172,10 +173,10 @@ except Exception as e:
 
 try:
     log_name = os.path.basename(logfile)
-    s3.upload_file(logfile, BUCKET_NAME, f"logs/{log_name}")
+    s3.upload_file(logfile, BUCKET_NAME, f"logs/pipeline_scraping_pdf_main/{log_name}")
     log("✅ Log envoyé sur le Cloud.")
 
-except:
-    pass
+except Exception as e:
+    log(f"⚠️ Erreur upload log: {e}")
 
 log("=== FIN DU PIPELINE ===")
