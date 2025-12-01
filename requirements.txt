@@ -1,0 +1,9 @@
+pandas
+polars
+selenium
+webdriver-manager
+beautifulsoup4
+lxml
+requests
+fastparquet
+boto3

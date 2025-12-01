@@ -1,0 +1,18 @@
+# Dossiers/variables d'environnement virtuel
+venv/
+.venv/
+.env
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# Paramètres de l'éditeur (VS Code)
+.vscode/
+
+# Données et fichiers téléchargés
+scraping_lois/db/pdf/
+scraping_lois/db/logs/
+
+# Fichiers système macOS
+.DS_Store
