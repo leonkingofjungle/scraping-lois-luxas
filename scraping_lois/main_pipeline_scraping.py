@@ -156,7 +156,7 @@ new_entries = (
               pl.lit(today).alias("added_at"),
               pl.lit(False).alias("downloaded"),
               pl.lit(False).alias("is_404"),
-              pl.lit(None).cast(pl.String).alias("pdf_name")
+              pl.lit(None).cast(pl.String).alias("pdf_name"),
               pl.lit(False).alias("is_corrupted")   
           )
 )
