@@ -5,6 +5,7 @@ from datetime import datetime
 import boto3
 from dotenv import load_dotenv
 import io
+import traceback
 
 from scrap_urls_all import scrap_urls_all
 from download_pdfs import download_new_pdfs
@@ -155,7 +156,8 @@ new_entries = (
               pl.lit(today).alias("added_at"),
               pl.lit(False).alias("downloaded"),
               pl.lit(False).alias("is_404"),
-              pl.lit(None).cast(pl.String).alias("pdf_name") 
+              pl.lit(None).cast(pl.String).alias("pdf_name")
+              pl.lit(False).alias("is_corrupted")   
           )
 )
 
@@ -180,6 +182,7 @@ final_df.write_parquet(local_db_path)
 
 log("☁️  Envoi de la DB mise à jour vers Scaleway...")
 try:
+    log(f"Tente d'uploader {local_db_path} vers {BUCKET_NAME}/{DB_FILENAME}")
     s3.upload_file(local_db_path, BUCKET_NAME, DB_FILENAME)
     log("✅ DB synchronisée sur le Cloud.")
     os.remove(local_db_path) 
@@ -187,6 +190,8 @@ try:
 
 except Exception as e:
     log(f"❌ ERREUR CRITIQUE: Impossible d'envoyer la DB sur le Cloud: {e}")
+    log(f"Détails complets de l'erreur d'upload S3 : {traceback.format_exc()}") # AJOUT ICI
+    exit(1)
 
 try:
     log_name = os.path.basename(logfile)
